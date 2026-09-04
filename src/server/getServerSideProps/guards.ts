@@ -7,6 +7,8 @@ import type { RollupType } from 'src/features/rollup/common/types/config';
 
 import type { Props } from 'src/server/getServerSideProps/handlers';
 
+import { getFlashblocksTabIds } from 'src/features/flashblocks/utils/tab-ids';
+
 import config from 'src/config';
 import { getFeaturePayload } from 'src/config/utils/features';
 
@@ -354,4 +356,46 @@ export const megaEth: Guard = () => async() => {
       notFound: true,
     };
   }
+};
+
+// On OP Stack chains the flashblocks feed answers to two tab ids, `flashblocks` and `subblocks`
+// (see NEXT_PUBLIC_FLASHBLOCKS_NAME). A link written under the other name is sent to the
+// canonical id. The redirect is temporary because the operator can flip the name later.
+export const blocksTab: Guard = (chainConfig: typeof config) => async(context) => {
+  const feature = chainConfig.features.flashblocks;
+  if (!feature.isEnabled) {
+    return;
+  }
+
+  const tab = context.query.tab;
+  if (typeof tab !== 'string') {
+    return;
+  }
+
+  const [ canonicalTabId, ...aliasTabIds ] = getFlashblocksTabIds(feature.name);
+  if (!aliasTabIds.includes(tab)) {
+    return;
+  }
+
+  // keep the other search params; dynamic route params also live in `query` but belong to the path
+  const routeParams = Object.keys(context.params ?? {});
+  const searchParams = new URLSearchParams();
+  for (const [ key, value ] of Object.entries(context.query)) {
+    if (key === 'tab' || value === undefined || routeParams.includes(key)) {
+      continue;
+    }
+    for (const item of Array.isArray(value) ? value : [ value ]) {
+      searchParams.append(key, item);
+    }
+  }
+  searchParams.set('tab', canonicalTabId);
+
+  const pathname = context.resolvedUrl.split('?')[0];
+
+  return {
+    redirect: {
+      destination: `${ pathname }?${ searchParams.toString() }`,
+      permanent: false,
+    },
+  };
 };

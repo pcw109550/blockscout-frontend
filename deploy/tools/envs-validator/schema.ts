@@ -16,6 +16,8 @@ type AddressProfileAPIConfig = {
   tag_bg_color?: string;
   tag_text_color?: string;
 };
+import type { FlashblocksName } from 'src/features/flashblocks/types/config';
+import { FLASHBLOCKS_NAMES } from 'src/features/flashblocks/types/config';
 import type { GasRefuelProviderConfig } from 'src/features/get-gas-button/types/client';
 import { GAS_UNITS } from 'src/slices/gas/types/config';
 import type { GasUnit } from 'src/slices/gas/types/config';
@@ -136,6 +138,7 @@ const schema = yup
         return isUndefined || valueSchema.isValidSync(data);
       }),
     NEXT_PUBLIC_FLASHBLOCKS_SOCKET_URL: yup.string().test(urlTest),
+    NEXT_PUBLIC_FLASHBLOCKS_NAME: yup.string<FlashblocksName>().oneOf(FLASHBLOCKS_NAMES),
     NEXT_PUBLIC_HOT_CONTRACTS_ENABLED: yup.boolean(),
     NEXT_PUBLIC_USERCENTRICS_CONFIG: yup
       .mixed()

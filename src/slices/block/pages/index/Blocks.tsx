@@ -13,6 +13,7 @@ import BlocksTabSlot from 'src/slices/block/pages/index/BlocksTabSlot';
 import { BLOCK_ITEM } from 'src/slices/block/stubs/list';
 
 import Flashblocks from 'src/features/flashblocks/pages/index/Flashblocks';
+import { getFlashblocksTabIds } from 'src/features/flashblocks/utils/tab-ids';
 
 import config from 'src/config';
 import useIsMobile from 'src/shared/hooks/useIsMobile';
@@ -70,8 +71,9 @@ const BlocksPageContent = () => {
     },
   });
 
-  const flashblocksTabId = flashblocksFeature.isEnabled ? flashblocksFeature.name + 's' : undefined;
-  const isFlashblocksTab = tab === flashblocksTabId && flashblocksTabId !== undefined;
+  // canonical id first, then the alias for the other OP Stack name so links written under either name keep resolving
+  const flashblocksTabIds = flashblocksFeature.isEnabled ? getFlashblocksTabIds(flashblocksFeature.name) : undefined;
+  const isFlashblocksTab = Boolean(tab) && flashblocksTabIds !== undefined && flashblocksTabIds.includes(tab);
 
   const pagination = (() => {
     if (tab === 'reorgs') {
@@ -81,14 +83,14 @@ const BlocksPageContent = () => {
       return unclesQuery.pagination;
     }
     if (isFlashblocksTab) {
-      return null;;
+      return null;
     }
     return blocksQuery.pagination;
   })();
 
   const tabs: Array<TabItemRegular> = [
     { id: 'blocks', title: 'All', component: <BlocksContent type="block" query={ blocksQuery }/> },
-    flashblocksFeature.isEnabled && flashblocksTabId && { id: flashblocksTabId, title: upperFirst(flashblocksFeature.name) + 's', component: <Flashblocks/> },
+    flashblocksFeature.isEnabled && flashblocksTabIds && { id: flashblocksTabIds, title: upperFirst(flashblocksFeature.name) + 's', component: <Flashblocks/> },
     { id: 'reorgs', title: 'Forked', component: <BlocksContent type="reorg" query={ reorgsQuery }/> },
     { id: 'uncles', title: 'Uncles', component: <BlocksContent type="uncle" query={ unclesQuery }/> },
   ].filter(Boolean);
